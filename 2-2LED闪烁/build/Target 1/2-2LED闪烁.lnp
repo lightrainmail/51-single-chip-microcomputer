@@ -1,0 +1,3 @@
+
+".\build\Target 1\main.o",".\build\Target 1\STARTUP.o" TO ".\build\Target 1\2-2LED…¡À∏"
+PRINT(".\build\Target 1\2-2LED…¡À∏.map") REMOVEUNUSED
