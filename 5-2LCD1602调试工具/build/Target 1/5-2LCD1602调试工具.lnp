@@ -1,0 +1,3 @@
+
+".\build\Target 1\LCD1602.o",".\build\Target 1\main.o",".\build\Target 1\STARTUP.o" TO ".\build\Target 1\5-2LCD1602调试工具"
+PRINT(".\build\Target 1\5-2LCD1602调试工具.map") REMOVEUNUSED

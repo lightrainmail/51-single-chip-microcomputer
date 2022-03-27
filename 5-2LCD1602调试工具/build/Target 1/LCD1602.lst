@@ -1,0 +1,913 @@
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE LCD1602
+OBJECT MODULE PLACED IN .\build\Target 1\LCD1602.o
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.exe .\LCD1602.C PRINT(.\build\Target 1\LCD1602.lst) OMF2 TABS(4) CODE NOCOND
+                    - SYMBOLS OPTIMIZE(8,SPEED) SMALL ROM(LARGE) INCDIR(.\..\..\..\..\..\Keil_v5\C51\INC\Atmel;.\..\..\..\..\..\Keil_v5\C51\I
+                    -NC) DEFINE(__UVISION_VERSION=526) OBJECT(.\build\Target 1\LCD1602.o)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          
+   3          
+   4          //引脚配置：
+   5          sbit LCD_RS=P2^6;
+   6          sbit LCD_RW=P2^5;
+   7          sbit LCD_EN=P2^7;
+   8          #define LCD_DataPort P0
+   9          
+  10          //函数定义：
+  11          /**
+  12            * @brief  LCD1602延时函数，12MHz调用可延时1ms
+  13            * @param  无
+  14            * @retval 无
+  15            */
+  16          void LCD_Delay()
+  17          {
+  18   1          unsigned char i, j;
+  19   1      
+  20   1          i = 2;
+  21   1          j = 239;
+  22   1          do
+  23   1          {
+  24   2              while (--j);
+  25   2          } while (--i);
+  26   1      }
+  27          
+  28          /**
+  29            * @brief  LCD1602写命令
+  30            * @param  Command 要写入的命令
+  31            * @retval 无
+  32            */
+  33          void LCD_WriteCommand(unsigned char Command)
+  34          {
+  35   1          LCD_RS=0;
+  36   1          LCD_RW=0;
+  37   1          LCD_DataPort=Command;
+  38   1          LCD_EN=1;
+  39   1          LCD_Delay();
+  40   1          LCD_EN=0;
+  41   1          LCD_Delay();
+  42   1      }
+  43          
+  44          /**
+  45            * @brief  LCD1602写数据
+  46            * @param  Data 要写入的数据
+  47            * @retval 无
+  48            */
+  49          void LCD_WriteData(unsigned char Data)
+  50          {
+  51   1          LCD_RS=1;
+  52   1          LCD_RW=0;
+  53   1          LCD_DataPort=Data;
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 2   
+
+  54   1          LCD_EN=1;
+  55   1          LCD_Delay();
+  56   1          LCD_EN=0;
+  57   1          LCD_Delay();
+  58   1      }
+  59          
+  60          /**
+  61            * @brief  LCD1602设置光标位置
+  62            * @param  Line 行位置，范围：1~2
+  63            * @param  Column 列位置，范围：1~16
+  64            * @retval 无
+  65            */
+  66          void LCD_SetCursor(unsigned char Line,unsigned char Column)
+  67          {
+  68   1          if(Line==1)
+  69   1          {
+  70   2              LCD_WriteCommand(0x80|(Column-1));
+  71   2          }
+  72   1          else if(Line==2)
+  73   1          {
+  74   2              LCD_WriteCommand(0x80|(Column-1+0x40));
+  75   2          }
+  76   1      }
+  77          
+  78          /**
+  79            * @brief  LCD1602初始化函数
+  80            * @param  无
+  81            * @retval 无
+  82            */
+  83          void LCD_Init()
+  84          {
+  85   1          LCD_WriteCommand(0x38);//八位数据接口，两行显示，5*7点阵
+  86   1          LCD_WriteCommand(0x0c);//显示开，光标关，闪烁关
+  87   1          LCD_WriteCommand(0x06);//数据读写操作后，光标自动加一，画面不动
+  88   1          LCD_WriteCommand(0x01);//光标复位，清屏
+  89   1      }
+  90          
+  91          /**
+  92            * @brief  在LCD1602指定位置上显示一个字符
+  93            * @param  Line 行位置，范围：1~2
+  94            * @param  Column 列位置，范围：1~16
+  95            * @param  Char 要显示的字符
+  96            * @retval 无
+  97            */
+  98          void LCD_ShowChar(unsigned char Line,unsigned char Column,char Char)
+  99          {
+ 100   1          LCD_SetCursor(Line,Column);
+ 101   1          LCD_WriteData(Char);
+ 102   1      }
+ 103          
+ 104          /**
+ 105            * @brief  在LCD1602指定位置开始显示所给字符串
+ 106            * @param  Line 起始行位置，范围：1~2
+ 107            * @param  Column 起始列位置，范围：1~16
+ 108            * @param  String 要显示的字符串
+ 109            * @retval 无
+ 110            */
+ 111          void LCD_ShowString(unsigned char Line,unsigned char Column,char *String)
+ 112          {
+ 113   1          unsigned char i;
+ 114   1          LCD_SetCursor(Line,Column);
+ 115   1          for(i=0;String[i]!='\0';i++)
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 3   
+
+ 116   1          {
+ 117   2              LCD_WriteData(String[i]);
+ 118   2          }
+ 119   1      }
+ 120          
+ 121          /**
+ 122            * @brief  返回值=X的Y次方
+ 123            */
+ 124          int LCD_Pow(int X,int Y)
+ 125          {
+ 126   1          unsigned char i;
+ 127   1          int Result=1;
+ 128   1          for(i=0;i<Y;i++)
+ 129   1          {
+ 130   2              Result*=X;
+ 131   2          }
+ 132   1          return Result;
+ 133   1      }
+ 134          
+ 135          /**
+ 136            * @brief  在LCD1602指定位置开始显示所给数字
+ 137            * @param  Line 起始行位置，范围：1~2
+ 138            * @param  Column 起始列位置，范围：1~16
+ 139            * @param  Number 要显示的数字，范围：0~65535
+ 140            * @param  Length 要显示数字的长度，范围：1~5
+ 141            * @retval 无
+ 142            */
+ 143          void LCD_ShowNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
+ 144          {
+ 145   1          unsigned char i;
+ 146   1          LCD_SetCursor(Line,Column);
+ 147   1          for(i=Length;i>0;i--)
+ 148   1          {
+ 149   2              LCD_WriteData(Number/LCD_Pow(10,i-1)%10+'0');
+ 150   2          }
+ 151   1      }
+ 152          
+ 153          /**
+ 154            * @brief  在LCD1602指定位置开始以有符号十进制显示所给数字
+ 155            * @param  Line 起始行位置，范围：1~2
+ 156            * @param  Column 起始列位置，范围：1~16
+ 157            * @param  Number 要显示的数字，范围：-32768~32767
+ 158            * @param  Length 要显示数字的长度，范围：1~5
+ 159            * @retval 无
+ 160            */
+ 161          void LCD_ShowSignedNum(unsigned char Line,unsigned char Column,int Number,unsigned char Length)
+ 162          {
+ 163   1          unsigned char i;
+ 164   1          unsigned int Number1;
+ 165   1          LCD_SetCursor(Line,Column);
+ 166   1          if(Number>=0)
+ 167   1          {
+ 168   2              LCD_WriteData('+');
+ 169   2              Number1=Number;
+ 170   2          }
+ 171   1          else
+ 172   1          {
+ 173   2              LCD_WriteData('-');
+ 174   2              Number1=-Number;
+ 175   2          }
+ 176   1          for(i=Length;i>0;i--)
+ 177   1          {
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 4   
+
+ 178   2              LCD_WriteData(Number1/LCD_Pow(10,i-1)%10+'0');
+ 179   2          }
+ 180   1      }
+ 181          
+ 182          /**
+ 183            * @brief  在LCD1602指定位置开始以十六进制显示所给数字
+ 184            * @param  Line 起始行位置，范围：1~2
+ 185            * @param  Column 起始列位置，范围：1~16
+ 186            * @param  Number 要显示的数字，范围：0~0xFFFF
+ 187            * @param  Length 要显示数字的长度，范围：1~4
+ 188            * @retval 无
+ 189            */
+ 190          void LCD_ShowHexNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
+ 191          {
+ 192   1          unsigned char i,SingleNumber;
+ 193   1          LCD_SetCursor(Line,Column);
+ 194   1          for(i=Length;i>0;i--)
+ 195   1          {
+ 196   2              SingleNumber=Number/LCD_Pow(16,i-1)%16;
+ 197   2              if(SingleNumber<10)
+ 198   2              {
+ 199   3                  LCD_WriteData(SingleNumber+'0');
+ 200   3              }
+ 201   2              else
+ 202   2              {
+ 203   3                  LCD_WriteData(SingleNumber-10+'A');
+ 204   3              }
+ 205   2          }
+ 206   1      }
+ 207          
+ 208          /**
+ 209            * @brief  在LCD1602指定位置开始以二进制显示所给数字
+ 210            * @param  Line 起始行位置，范围：1~2
+ 211            * @param  Column 起始列位置，范围：1~16
+ 212            * @param  Number 要显示的数字，范围：0~1111 1111 1111 1111
+ 213            * @param  Length 要显示数字的长度，范围：1~16
+ 214            * @retval 无
+ 215            */
+ 216          void LCD_ShowBinNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
+ 217          {
+ 218   1          unsigned char i;
+ 219   1          LCD_SetCursor(Line,Column);
+ 220   1          for(i=Length;i>0;i--)
+ 221   1          {
+ 222   2              LCD_WriteData(Number/LCD_Pow(2,i-1)%2+'0');
+ 223   2          }
+ 224   1      }
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION L?0047 (BEGIN)
+0000 C2A5              CLR     LCD_RW
+0002 8F80              MOV     P0,R7
+0004 D2A7              SETB    LCD_EN
+             ; FUNCTION LCD_Delay (BEGIN)
+                                           ; SOURCE LINE # 16
+                                           ; SOURCE LINE # 17
+                                           ; SOURCE LINE # 20
+;---- Variable 'i' assigned to Register 'R7' ----
+0006 7F02              MOV     R7,#02H
+                                           ; SOURCE LINE # 21
+;---- Variable 'j' assigned to Register 'R6' ----
+0008 7EEF              MOV     R6,#0EFH
+                                           ; SOURCE LINE # 23
+000A         ?C0004:
+                                           ; SOURCE LINE # 24
+000A DEFE              DJNZ    R6,?C0004
+                                           ; SOURCE LINE # 25
+000C DFFC              DJNZ    R7,?C0004
+                                           ; SOURCE LINE # 26
+000E 22                RET     
+             ; FUNCTION LCD_Delay (END)
+
+             ; FUNCTION _LCD_WriteCommand (BEGIN)
+                                           ; SOURCE LINE # 33
+;---- Variable 'Command' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 35
+0000 C2A6              CLR     LCD_RS
+                                           ; SOURCE LINE # 36
+                                           ; SOURCE LINE # 37
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+0002 120000      R     LCALL   L?0047
+                                           ; SOURCE LINE # 40
+0005 C2A7              CLR     LCD_EN
+                                           ; SOURCE LINE # 41
+0007 020000      R     LJMP    LCD_Delay
+             ; FUNCTION _LCD_WriteCommand (END)
+
+             ; FUNCTION L?0045 (BEGIN)
+0000 CF                XCH     A,R7
+0001 CD                XCH     A,R5
+0002 CF                XCH     A,R7
+0003 CE                XCH     A,R6
+0004 CC                XCH     A,R4
+0005 CE                XCH     A,R6
+0006 120000      E     LCALL   ?C?UIDIV
+0009 7C00              MOV     R4,#00H
+000B 7D0A              MOV     R5,#0AH
+000D 120000      E     LCALL   ?C?UIDIV
+0010 ED                MOV     A,R5
+0011 2430              ADD     A,#030H
+0013 FF                MOV     R7,A
+             ; FUNCTION _LCD_WriteData (BEGIN)
+                                           ; SOURCE LINE # 49
+;---- Variable 'Data' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 51
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 6   
+
+0014 D2A6              SETB    LCD_RS
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+0016 120000      R     LCALL   L?0047
+                                           ; SOURCE LINE # 56
+0019 C2A7              CLR     LCD_EN
+                                           ; SOURCE LINE # 57
+001B 020000      R     LJMP    LCD_Delay
+             ; FUNCTION _LCD_WriteData (END)
+
+             ; FUNCTION _LCD_SetCursor (BEGIN)
+                                           ; SOURCE LINE # 66
+;---- Variable 'Column' assigned to Register 'R5' ----
+;---- Variable 'Line' assigned to Register 'R6' ----
+0000 AE07              MOV     R6,AR7
+                                           ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+0002 EE                MOV     A,R6
+0003 FB                MOV     R3,A
+0004 7A00              MOV     R2,#00H
+0006 6401              XRL     A,#01H
+0008 7004              JNZ     ?C0009
+                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 70
+000A ED                MOV     A,R5
+000B 14                DEC     A
+                                           ; SOURCE LINE # 71
+000C 8009              SJMP    ?C0043
+000E         ?C0009:
+                                           ; SOURCE LINE # 72
+000E EB                MOV     A,R3
+000F 6402              XRL     A,#02H
+0011 4A                ORL     A,R2
+0012 7009              JNZ     ?C0012
+                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 74
+0014 ED                MOV     A,R5
+0015 243F              ADD     A,#03FH
+0017         ?C0043:
+0017 4480              ORL     A,#080H
+0019 FF                MOV     R7,A
+001A 120000      R     LCALL   _LCD_WriteCommand
+                                           ; SOURCE LINE # 75
+                                           ; SOURCE LINE # 76
+001D         ?C0012:
+001D 22                RET     
+             ; FUNCTION _LCD_SetCursor (END)
+
+             ; FUNCTION LCD_Init (BEGIN)
+                                           ; SOURCE LINE # 83
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+0000 7F38              MOV     R7,#038H
+0002 120000      R     LCALL   _LCD_WriteCommand
+                                           ; SOURCE LINE # 86
+0005 7F0C              MOV     R7,#0CH
+0007 120000      R     LCALL   _LCD_WriteCommand
+                                           ; SOURCE LINE # 87
+000A 7F06              MOV     R7,#06H
+000C 120000      R     LCALL   _LCD_WriteCommand
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 7   
+
+                                           ; SOURCE LINE # 88
+000F 7F01              MOV     R7,#01H
+0011 020000      R     LJMP    _LCD_WriteCommand
+             ; FUNCTION LCD_Init (END)
+
+             ; FUNCTION _LCD_ShowChar (BEGIN)
+                                           ; SOURCE LINE # 98
+;---- Variable 'Line' assigned to Register 'R6' ----
+;---- Variable 'Char' assigned to Register 'R4' ----
+0000 AC03              MOV     R4,AR3
+;---- Variable 'Column' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 100
+0002 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 101
+0005 AF04              MOV     R7,AR4
+0007 020000      R     LJMP    _LCD_WriteData
+             ; FUNCTION _LCD_ShowChar (END)
+
+             ; FUNCTION _LCD_ShowString (BEGIN)
+                                           ; SOURCE LINE # 111
+0000 8B00        R     MOV     String,R3
+0002 8A00        R     MOV     String+01H,R2
+0004 8900        R     MOV     String+02H,R1
+;---- Variable 'Column' assigned to Register 'R5' ----
+;---- Variable 'Line' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 114
+0006 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 115
+;---- Variable 'i' assigned to Register 'R5' ----
+0009 E4                CLR     A
+000A FD                MOV     R5,A
+000B         ?C0015:
+000B AB00        R     MOV     R3,String
+000D AA00        R     MOV     R2,String+01H
+000F A900        R     MOV     R1,String+02H
+0011 8D82              MOV     DPL,R5
+0013 758300            MOV     DPH,#00H
+0016 120000      E     LCALL   ?C?CLDOPTR
+0019 FF                MOV     R7,A
+001A 6006              JZ      ?C0018
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 117
+001C 120000      R     LCALL   _LCD_WriteData
+                                           ; SOURCE LINE # 118
+001F 0D                INC     R5
+0020 80E9              SJMP    ?C0015
+                                           ; SOURCE LINE # 119
+0022         ?C0018:
+0022 22                RET     
+             ; FUNCTION _LCD_ShowString (END)
+
+             ; FUNCTION L?0046 (BEGIN)
+0000 EF                MOV     A,R7
+0001 24FF              ADD     A,#0FFH
+0003 FD                MOV     R5,A
+0004 EE                MOV     A,R6
+0005 34FF              ADDC    A,#0FFH
+0007 FC                MOV     R4,A
+0008 7F0A              MOV     R7,#0AH
+             ; FUNCTION _LCD_Pow (BEGIN)
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 8   
+
+                                           ; SOURCE LINE # 124
+000A 8E00        R     MOV     X,R6
+000C 8F00        R     MOV     X+01H,R7
+000E 8C00        R     MOV     Y,R4
+0010 8D00        R     MOV     Y+01H,R5
+                                           ; SOURCE LINE # 125
+                                           ; SOURCE LINE # 127
+;---- Variable 'Result' assigned to Register 'R6/R7' ----
+0012 7F01              MOV     R7,#01H
+0014 7E00              MOV     R6,#00H
+                                           ; SOURCE LINE # 128
+;---- Variable 'i' assigned to Register 'R3' ----
+0016 E4                CLR     A
+0017 FB                MOV     R3,A
+0018         ?C0019:
+0018 EB                MOV     A,R3
+0019 C3                CLR     C
+001A 9500        R     SUBB    A,Y+01H
+001C E500        R     MOV     A,Y
+001E 6480              XRL     A,#080H
+0020 F8                MOV     R0,A
+0021 7480              MOV     A,#080H
+0023 98                SUBB    A,R0
+0024 500A              JNC     ?C0020
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+0026 AC00        R     MOV     R4,X
+0028 AD00        R     MOV     R5,X+01H
+002A 120000      E     LCALL   ?C?IMUL
+                                           ; SOURCE LINE # 131
+002D 0B                INC     R3
+002E 80E8              SJMP    ?C0019
+0030         ?C0020:
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 133
+0030 22                RET     
+             ; FUNCTION _LCD_Pow (END)
+
+             ; FUNCTION _LCD_ShowNum (BEGIN)
+                                           ; SOURCE LINE # 143
+0000 8A00        R     MOV     Number,R2
+0002 8B00        R     MOV     Number+01H,R3
+;---- Variable 'Column' assigned to Register 'R5' ----
+;---- Variable 'Line' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 146
+0004 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 147
+;---- Variable 'i' assigned to Register 'R2' ----
+0007 AA00        R     MOV     R2,Length
+0009         ?C0023:
+0009 EA                MOV     A,R2
+000A FF                MOV     R7,A
+000B 7E00              MOV     R6,#00H
+000D D3                SETB    C
+000E 9400              SUBB    A,#00H
+0010 7480              MOV     A,#080H
+0012 9480              SUBB    A,#080H
+0014 400D              JC      ?C0026
+                                           ; SOURCE LINE # 148
+                                           ; SOURCE LINE # 149
+0016 120000      R     LCALL   L?0046
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 9   
+
+0019 AC00        R     MOV     R4,Number
+001B AD00        R     MOV     R5,Number+01H
+001D 120000      R     LCALL   L?0045
+                                           ; SOURCE LINE # 150
+0020 1A                DEC     R2
+0021 80E6              SJMP    ?C0023
+                                           ; SOURCE LINE # 151
+0023         ?C0026:
+0023 22                RET     
+             ; FUNCTION _LCD_ShowNum (END)
+
+             ; FUNCTION _LCD_ShowSignedNum (BEGIN)
+                                           ; SOURCE LINE # 161
+;---- Variable 'Line' assigned to Register 'R7' ----
+;---- Variable 'Number' assigned to Register 'DPTR' ----
+0000 8B82              MOV     DPL,R3
+0002 8A83              MOV     DPH,R2
+;---- Variable 'Column' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 162
+                                           ; SOURCE LINE # 165
+0004 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 166
+0007 C3                CLR     C
+0008 E583              MOV     A,DPH
+000A 6480              XRL     A,#080H
+000C 9480              SUBB    A,#080H
+000E 400D              JC      ?C0027
+                                           ; SOURCE LINE # 167
+                                           ; SOURCE LINE # 168
+0010 7F2B              MOV     R7,#02BH
+0012 120000      R     LCALL   _LCD_WriteData
+                                           ; SOURCE LINE # 169
+0015 858300      R     MOV     Number1,DPH
+0018 858200      R     MOV     Number1+01H,DPL
+                                           ; SOURCE LINE # 170
+001B 8010              SJMP    ?C0028
+001D         ?C0027:
+                                           ; SOURCE LINE # 172
+                                           ; SOURCE LINE # 173
+001D 7F2D              MOV     R7,#02DH
+001F 120000      R     LCALL   _LCD_WriteData
+                                           ; SOURCE LINE # 174
+0022 C3                CLR     C
+0023 E4                CLR     A
+0024 9582              SUBB    A,DPL
+0026 F500        R     MOV     Number1+01H,A
+0028 E4                CLR     A
+0029 9583              SUBB    A,DPH
+002B F500        R     MOV     Number1,A
+                                           ; SOURCE LINE # 175
+002D         ?C0028:
+                                           ; SOURCE LINE # 176
+;---- Variable 'i' assigned to Register 'R2' ----
+002D AA00        R     MOV     R2,Length
+002F         ?C0029:
+002F EA                MOV     A,R2
+0030 FF                MOV     R7,A
+0031 7E00              MOV     R6,#00H
+0033 D3                SETB    C
+0034 9400              SUBB    A,#00H
+0036 7480              MOV     A,#080H
+0038 9480              SUBB    A,#080H
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 10  
+
+003A 400D              JC      ?C0032
+                                           ; SOURCE LINE # 177
+                                           ; SOURCE LINE # 178
+003C 120000      R     LCALL   L?0046
+003F AC00        R     MOV     R4,Number1
+0041 AD00        R     MOV     R5,Number1+01H
+0043 120000      R     LCALL   L?0045
+                                           ; SOURCE LINE # 179
+0046 1A                DEC     R2
+0047 80E6              SJMP    ?C0029
+                                           ; SOURCE LINE # 180
+0049         ?C0032:
+0049 22                RET     
+             ; FUNCTION _LCD_ShowSignedNum (END)
+
+             ; FUNCTION _LCD_ShowHexNum (BEGIN)
+                                           ; SOURCE LINE # 190
+0000 8A00        R     MOV     Number,R2
+0002 8B00        R     MOV     Number+01H,R3
+;---- Variable 'Column' assigned to Register 'R5' ----
+;---- Variable 'Line' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 191
+                                           ; SOURCE LINE # 193
+0004 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 194
+;---- Variable 'i' assigned to Register 'R2' ----
+0007 AA00        R     MOV     R2,Length
+0009         ?C0033:
+0009 EA                MOV     A,R2
+000A D3                SETB    C
+000B 9400              SUBB    A,#00H
+000D 7480              MOV     A,#080H
+000F 9480              SUBB    A,#080H
+0011 4037              JC      ?C0038
+                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 196
+0013 EA                MOV     A,R2
+0014 24FF              ADD     A,#0FFH
+0016 FD                MOV     R5,A
+0017 E4                CLR     A
+0018 34FF              ADDC    A,#0FFH
+001A FC                MOV     R4,A
+001B 7F10              MOV     R7,#010H
+001D 7E00              MOV     R6,#00H
+001F 120000      R     LCALL   _LCD_Pow
+0022 AC00        R     MOV     R4,Number
+0024 AD00        R     MOV     R5,Number+01H
+0026 CF                XCH     A,R7
+0027 CD                XCH     A,R5
+0028 CF                XCH     A,R7
+0029 CE                XCH     A,R6
+002A CC                XCH     A,R4
+002B CE                XCH     A,R6
+002C 120000      E     LCALL   ?C?UIDIV
+002F EF                MOV     A,R7
+0030 540F              ANL     A,#0FH
+;---- Variable 'SingleNumber' assigned to Register 'R6' ----
+0032 FE                MOV     R6,A
+                                           ; SOURCE LINE # 197
+0033 C3                CLR     C
+0034 940A              SUBB    A,#0AH
+0036 7480              MOV     A,#080H
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 11  
+
+0038 9480              SUBB    A,#080H
+003A EE                MOV     A,R6
+003B 5004              JNC     ?C0036
+                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 199
+003D 2430              ADD     A,#030H
+                                           ; SOURCE LINE # 200
+003F 8002              SJMP    ?C0044
+0041         ?C0036:
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 203
+0041 2437              ADD     A,#037H
+0043         ?C0044:
+0043 FF                MOV     R7,A
+0044 120000      R     LCALL   _LCD_WriteData
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 205
+0047         ?C0035:
+0047 1A                DEC     R2
+0048 80BF              SJMP    ?C0033
+                                           ; SOURCE LINE # 206
+004A         ?C0038:
+004A 22                RET     
+             ; FUNCTION _LCD_ShowHexNum (END)
+
+             ; FUNCTION _LCD_ShowBinNum (BEGIN)
+                                           ; SOURCE LINE # 216
+0000 8A00        R     MOV     Number,R2
+0002 8B00        R     MOV     Number+01H,R3
+;---- Variable 'Column' assigned to Register 'R5' ----
+;---- Variable 'Line' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 219
+0004 120000      R     LCALL   _LCD_SetCursor
+                                           ; SOURCE LINE # 220
+;---- Variable 'i' assigned to Register 'R2' ----
+0007 AA00        R     MOV     R2,Length
+0009         ?C0039:
+0009 EA                MOV     A,R2
+000A FF                MOV     R7,A
+000B 7E00              MOV     R6,#00H
+000D D3                SETB    C
+000E 9400              SUBB    A,#00H
+0010 7480              MOV     A,#080H
+0012 9480              SUBB    A,#080H
+0014 4026              JC      ?C0042
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+0016 EF                MOV     A,R7
+0017 24FF              ADD     A,#0FFH
+0019 FD                MOV     R5,A
+001A EE                MOV     A,R6
+001B 34FF              ADDC    A,#0FFH
+001D FC                MOV     R4,A
+001E 7F02              MOV     R7,#02H
+0020 120000      R     LCALL   _LCD_Pow
+0023 AC00        R     MOV     R4,Number
+0025 AD00        R     MOV     R5,Number+01H
+0027 CF                XCH     A,R7
+0028 CD                XCH     A,R5
+0029 CF                XCH     A,R7
+002A CE                XCH     A,R6
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 12  
+
+002B CC                XCH     A,R4
+002C CE                XCH     A,R6
+002D 120000      E     LCALL   ?C?UIDIV
+0030 EF                MOV     A,R7
+0031 5401              ANL     A,#01H
+0033 2430              ADD     A,#030H
+0035 FF                MOV     R7,A
+0036 120000      R     LCALL   _LCD_WriteData
+                                           ; SOURCE LINE # 223
+0039 1A                DEC     R2
+003A 80CD              SJMP    ?C0039
+                                           ; SOURCE LINE # 224
+003C         ?C0042:
+003C 22                RET     
+             ; FUNCTION _LCD_ShowBinNum (END)
+
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 13  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P0 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0080H  1
+P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
+P2 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A0H  1
+P3 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B0H  1
+AC . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D6H  1
+T0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B4H  1
+T1 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B5H  1
+EA . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AFH  1
+T2 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0090H  1
+_LCD_WriteCommand. . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Command. . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0007H  1
+_LCD_ShowNum . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0007H  1
+  Column . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0005H  1
+  Number . . . . . . . . . . . . . . .  AUTO     DATA   U_INT    0002H  2
+  Length . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0004H  1
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0002H  1
+IE . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A8H  1
+P0_0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0080H  1
+P1_0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0090H  1
+P0_1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0081H  1
+P2_0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A0H  1
+P1_1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0091H  1
+P0_2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0082H  1
+P3_0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B0H  1
+P2_1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A1H  1
+P1_2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0092H  1
+P0_3 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0083H  1
+P3_1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B1H  1
+P2_2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A2H  1
+P1_3 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0093H  1
+P0_4 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0084H  1
+P3_2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B2H  1
+P2_3 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A3H  1
+P1_4 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0094H  1
+P0_5 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0085H  1
+EXF2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CEH  1
+RD . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B7H  1
+P3_3 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+P2_4 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A4H  1
+P1_5 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0095H  1
+P0_6 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0086H  1
+P3_4 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B4H  1
+P2_5 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A5H  1
+P1_6 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0096H  1
+P0_7 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0087H  1
+P3_5 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B5H  1
+ES . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
+P2_6 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A6H  1
+P1_7 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0097H  1
+P3_6 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B6H  1
+P2_7 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A7H  1
+IP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B8H  1
+P3_7 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B7H  1
+RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
+CY . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D7H  1
+INT0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B2H  1
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 14  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+INT1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
+RCAP2H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CBH  1
+PS . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BCH  1
+SP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0081H  1
+T2EX . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0091H  1
+_LCD_ShowBinNum. . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0007H  1
+  Column . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0005H  1
+  Number . . . . . . . . . . . . . . .  AUTO     DATA   U_INT    0002H  2
+  Length . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0004H  1
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0002H  1
+OV . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D2H  1
+LCD_Delay. . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0006H  -----
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0007H  1
+  j. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0006H  1
+RCAP2L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CAH  1
+C_T2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C9H  1
+WR . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B6H  1
+RCLK . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CDH  1
+TCLK . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CCH  1
+_LCD_ShowHexNum. . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0007H  1
+  Column . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0005H  1
+  Number . . . . . . . . . . . . . . .  AUTO     DATA   U_INT    0002H  2
+  Length . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0004H  1
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0002H  1
+  SingleNumber . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0006H  1
+SBUF . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0099H  1
+PCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0087H  1
+SCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0098H  1
+TMOD . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0089H  1
+TCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0088H  1
+IE0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0089H  1
+_LCD_WriteData . . . . . . . . . . . .  PUBLIC   CODE   PROC     0014H  -----
+  Data . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0007H  1
+IE1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008BH  1
+B. . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F0H  1
+CP_RL2 . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C8H  1
+LCD_EN . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A7H  1
+ACC. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E0H  1
+ET0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A9H  1
+LCD_Init . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+ET1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ABH  1
+TF0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008DH  1
+ET2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ADH  1
+TF1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008FH  1
+TF2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CFH  1
+RB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009AH  1
+TH0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008CH  1
+EX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A8H  1
+IT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0088H  1
+TH1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008DH  1
+EX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AAH  1
+TB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009BH  1
+IT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008AH  1
+TH2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CDH  1
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 15  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P. . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D0H  1
+SM0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009FH  1
+TL0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008AH  1
+SM1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009EH  1
+TL1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008BH  1
+SM2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009DH  1
+TL2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CCH  1
+_LCD_ShowString. . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0007H  1
+  Column . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0005H  1
+  String . . . . . . . . . . . . . . .  AUTO     DATA   PTR      0000H  3
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0005H  1
+PT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B9H  1
+RS0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D3H  1
+PT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BBH  1
+RS1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D4H  1
+PT2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BDH  1
+TR0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008CH  1
+TR1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008EH  1
+_LCD_ShowChar. . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0006H  1
+  Column . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0005H  1
+  Char . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0004H  1
+TR2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CAH  1
+PX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B8H  1
+LCD_RS . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A6H  1
+PX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BAH  1
+DPH. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0083H  1
+LCD_RW . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A5H  1
+DPL. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0082H  1
+EXEN2. . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CBH  1
+_LCD_SetCursor . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0006H  1
+  Column . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0005H  1
+REN. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009CH  1
+T2MOD. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C9H  1
+T2CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C8H  1
+_LCD_ShowSignedNum . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  Line . . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0007H  1
+  Column . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0005H  1
+  Number . . . . . . . . . . . . . . .  AUTO     DATA   INT      0082H  2
+  Length . . . . . . . . . . . . . . .  AUTO     DATA   U_CHAR   0004H  1
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0002H  1
+  Number1. . . . . . . . . . . . . . .  AUTO     DATA   U_INT    0005H  2
+_LCD_Pow . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     000AH  -----
+  X. . . . . . . . . . . . . . . . . .  AUTO     DATA   INT      0000H  2
+  Y. . . . . . . . . . . . . . . . . .  AUTO     DATA   INT      0002H  2
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0003H  1
+  Result . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
+RXD. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B0H  1
+TXD. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B1H  1
+F0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D5H  1
+F1 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D1H  1
+PSW. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D0H  1
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    445    ----
+C51 COMPILER V9.60.0.0   LCD1602                                                           03/18/2022 02:08:57 PAGE 16  
+
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      29
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
